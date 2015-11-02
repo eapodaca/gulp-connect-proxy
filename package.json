@@ -1,16 +1,16 @@
 {
-  "name": "gulp-connect-proxy",
-  "version": "0.3.1",
-  "description": "A simple proxy middleware for gulp-connect",
+  "name": "gulp-connect-proxy-with-headers",
+  "version": "10.3.1",
+  "description": "A simple proxy with headers middleware for gulp-connect",
   "repository": {
     "type": "git",
-    "url": "git@github.com:chrishoage/gulp-connect-proxy.git"
+    "url": "git@github.com/bborn2/gulp-connect-proxy-with-headers.git"
   },
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Chris Hoage",
+  "author": "Kun Song, Chris Hoage",
   "license": "ISC",
   "dependencies": {
     "extend": "^2.0.0"
