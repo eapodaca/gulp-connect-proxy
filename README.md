@@ -1,5 +1,7 @@
-# gulp-connect-proxy
+# gulp-connect-proxy-with_cookie
 A simple proxy middleware for gulp-connect
+
+pass cookie and other headers
 
 # How to use
 

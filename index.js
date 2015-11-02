@@ -9,6 +9,10 @@ function proxyRequest (localRequest, localResponse, next) {
 
   var options = url.parse('http://' + localRequest.url.slice(1));
 
+  var headers = localRequest.headers;
+  headers.host = options.host;
+  options.headers = headers;
+
   http.request(options, function (remoteRequest) {
     if (remoteRequest.statusCode === 200) {
       localResponse.writeHead(200, {
