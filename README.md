@@ -1,6 +1,8 @@
 # gulp-connect-proxy-with-headers
 A simple proxy middleware for gulp-connect
 
+support post request
+
 pass cookie and other headers
 
 # How to use

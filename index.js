@@ -1,69 +1,95 @@
-var url    = require('url');
-var http   = require('http');
-var fs     = require('fs');
-var path   = require('path');
+var url = require('url');
+var http = require('http');
+var fs = require('fs');
+var path = require('path');
 var extend = require('extend');
 
 
-function proxyRequest (localRequest, localResponse, next) {
+function proxyRequest(localRequest, localResponse, next) {
 
-  var options = url.parse('http://' + localRequest.url.slice(1));
+    var params = url.parse('http://' + localRequest.url.slice(1), true);
+    
+    var headers = localRequest.headers;
+    headers.host = params.host;
 
-  var headers = localRequest.headers;
-  headers.host = options.host;
-  options.headers = headers;
+    console.log("headers.host = " + headers.host);
 
-  http.request(options, function (remoteRequest) {
-    if (remoteRequest.statusCode === 200) {
-      localResponse.writeHead(200, {
-          'Content-Type': remoteRequest.headers['content-type']
-      });
-      remoteRequest.pipe(localResponse);
+    var reqOptions = {
+        host: params.host.split(":")[0],
+        port: params.port ? params.port : 80,
+        path: params.path,
+        headers: headers,
+        method: localRequest.method
+    };
+
+    var req = http.request(reqOptions, function (res) {
+
+        console.log(res.req.method, res.req.path);
+        var resHeaders = res.headers;
+
+        localResponse.writeHead(200, resHeaders);
+
+        var body = "";
+        res.on('data', function (data) {
+            body += data;
+            localResponse.write(data);
+        });
+        res.on('end', function () {
+            localResponse.end();
+
+        });
+    });
+    req.on('error', function (e) {
+        console.log('An error occured: ' + e.message);
+        localResponse.writeHead(503);
+        localResponse.write("Error!");
+        localResponse.end();
+    });
+
+    if (/POST|PUT/i.test(localRequest.method)) {
+        localRequest.pipe(req);
     } else {
-      localResponse.writeHead(remoteRequest.statusCode);
-      localResponse.end();
+        req.end();
     }
-  }).on('error', function(e) {
-    next();
-  }).end();
+
 };
 
-function Proxy (options) {
-  var config = extend({}, {
-    route: ''
-  }, options);
+function Proxy(options) {
+    var config = extend({}, {
+        route: ''
+    }, options);
 
-  return function (localRequest, localResponse, next) {
-    if (typeof config.root === 'string') {
-      config.root = [config.root]
-    } else if (!Array.isArray(config.root)) {
-      throw new Error('No root specified')
-    }
-
-    var pathChecks = []
-    config.root.forEach(function(root, i) {
-      var p = path.resolve(root)+localRequest.url;
-
-      fs.access(p, function(err) {
-        pathChecks.push(err ? false : true)
-        if (config.root.length == ++i) {
-          var pathExists = pathChecks.some(function (p) {
-            return p;
-          });
-          if (pathExists) {
-            next();
-          } else {
-            if (localRequest.url.slice(0, config.route.length) === config.route) {
-              localRequest.url = localRequest.url.slice(config.route.length);
-              proxyRequest(localRequest, localResponse, next);
-            } else {
-              return next();
-            }
-          }
+    return function (localRequest, localResponse, next) {
+        if (typeof config.root === 'string') {
+            config.root = [config.root]
+        } else if (!Array.isArray(config.root)) {
+            throw new Error('No root specified')
         }
-      });
-    })
-  }
+
+        var pathChecks = []
+        config.root.forEach(function (root, i) {
+            var p = path.resolve(root) + localRequest.url;
+
+            fs.access(p, function (err) {
+                pathChecks.push(err ? false : true)
+                if (config.root.length == ++i) {
+                    var pathExists = pathChecks.some(function (p) {
+                        return p;
+                    });
+                    if (pathExists) {
+                        next();
+                    } else {
+                        if (localRequest.url.slice(0, config.route.length) === config.route) {
+                            localRequest.url = localRequest.url.slice(config.route.length);
+                            proxyRequest(localRequest, localResponse, next);
+                        } else {
+                            return next();
+                        }
+                    }
+                }
+            });
+        })
+    }
 }
 
 module.exports = Proxy;
