@@ -27,7 +27,7 @@ function proxyRequest(localRequest, localResponse, next) {
         console.log(res.req.method, res.req.path);
         var resHeaders = res.headers;
 
-        localResponse.writeHead(200, resHeaders);
+        localResponse.writeHead(res.statusCode, resHeaders);
 
         var body = "";
         res.on('data', function (data) {
