@@ -1,18 +1,19 @@
 var url = require('url');
 var http = require('http');
+var https = require('https');
 var fs = require('fs');
 var path = require('path');
 var extend = require('extend');
 
 
-function proxyRequest(localRequest, localResponse, next) {
+function proxyRequest(config, localRequest, localResponse, next) {
 
-    var params = url.parse('http://' + localRequest.url.slice(1), true);
-    
+    var base = config.proxyRoot || 'http://';
+
+    var params = url.parse(base + localRequest.url.slice(1), true);
+
     var headers = localRequest.headers;
     headers.host = params.host;
-
-    console.log("headers.host = " + headers.host);
 
     var reqOptions = {
         host: params.host.split(":")[0],
@@ -22,9 +23,15 @@ function proxyRequest(localRequest, localResponse, next) {
         method: localRequest.method
     };
 
-    var req = http.request(reqOptions, function (res) {
+    var httpLib = http;
 
-        console.log(res.req.method, res.req.path);
+    if(params.protocol.indexOf('https') !== -1) {
+        reqOptions.rejectUnauthorized = false;
+        httpLib = https;
+    }
+
+    var req = httpLib.request(reqOptions, function (res) {
+
         var resHeaders = res.headers;
 
         localResponse.writeHead(res.statusCode, resHeaders);
@@ -40,9 +47,8 @@ function proxyRequest(localRequest, localResponse, next) {
         });
     });
     req.on('error', function (e) {
-        console.log('An error occured: ' + e.message);
         localResponse.writeHead(503);
-        localResponse.write("Error!");
+        localResponse.write("Error: " + e.message);
         localResponse.end();
     });
 
@@ -81,7 +87,7 @@ function Proxy(options) {
                     } else {
                         if (localRequest.url.slice(0, config.route.length) === config.route) {
                             localRequest.url = localRequest.url.slice(config.route.length);
-                            proxyRequest(localRequest, localResponse, next);
+                            proxyRequest(config, localRequest, localResponse, next);
                         } else {
                             return next();
                         }
