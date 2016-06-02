@@ -1,4 +1,4 @@
-# gulp-connect-proxy-with-headers
+# gulp-connect-proxy
 A simple proxy middleware for gulp-connect
 
 support post request
@@ -27,6 +27,10 @@ gulp.task('connect', function () {
 `opt.route` is optional, if omitted requests made to `http://localhost:9000/foo.com/bar.png` will be proxied.
 
 If `opt.route` is set requests made to `http://localhost:9000/proxy/foo.com/bar.png` will be proxied.
+
+`opt.proxyRoot` is optional, if omitted requests made to `http://localhost:9000/foo.com/bar.png` will be proxied.
+
+If `opt.proxyRoot` is set and `opt.route` is set requests made to `http://localhost:9000/proxy/bar.png` will be proxied to `http://proxyRoot/bar.png`.
 
 **This is for development purposes only**. If you need a proxy in production use Nginx or Apache.
 
